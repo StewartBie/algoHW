@@ -1,12 +1,10 @@
-// 最小费用最大流实现（Dijkstra + 势）
-// - 残量图使用并行数组表示的邻接表存储
-// - 每条原始边对应一个反向边，反向边初始容量为 0，费用为负值
-// - 势（pi）通过从源点运行 Bellman-Ford 计算，以便可以用 Dijkstra 在约化费用（非负）上搜索
-// 输入格式（stdin）：
+// 最小费用最大流（MCMF）实现
+// 残量图用并行数组实现；每条边同时插入反向边（容量0，费用取负）。
+// 输入：
 //   n m
-//   u v cap cost   （m 行，节点编号为 0-based）
+//   u v cap cost  （m 行，0-based）
 //   s t
-// 输出：两个整数，表示最大流与总费用
+// 输出：`flow cost`
 
 #include <limits.h>
 #include <stdio.h>
@@ -31,9 +29,7 @@ int edge_cnt = 0;
 int *to_, *next_, *cap_;
 ll *cost_;
 
-// 为边分配空间。调用者应传入预期的原始边数量 `m2`，
-// 我们为正向和反向边各分配空间（2*m2）
-// 仅在第一次调用时分配 不会动态扩展
+// 为边数组分配一次性空间（2*m2 条记录）
 void ensure_edge_alloc(int m2) {
   if (edge_cnt == 0) {
     int sz = (m2 * 2 + 5);
@@ -44,9 +40,7 @@ void ensure_edge_alloc(int m2) {
   }
 }
 
-// 向图中添加有向边 u->v，容量为 c，单位费用为 w。
-// 同时添加反向边 v->u（初始容量为 0，费用为 -w）以便构建残量图。
-// 边存储在并行数组中，通过 `head` 和 `next_` 进行链式连接。
+// 添加有向边 u->v（cap c，cost w）及反向边（cap 0，cost -w）。
 void add_edge(int u, int v, int c, ll w) {
   // forward edge
   to_[edge_cnt] = v;
@@ -62,9 +56,7 @@ void add_edge(int u, int v, int c, ll w) {
   head[v] = edge_cnt++;
 }
 
-// Dijkstra 使用的最小二叉堆（优先队列）。
-// 存储 (距离, 顶点) 对。该实现不支持 decrease-key；当发现更短距离时会插入新条目，
-// 弹出时通过与当前 `dist[]` 比较来忽略过时的条目。
+// 二叉堆（保留供 Dijkstra 使用）。不支持 decrease-key，采用重复入堆并在弹出时跳过过时条目。
 typedef struct {
   ll d; // distance
   int v; // vertex
@@ -109,13 +101,8 @@ Pair heap_pop() {
   return ret;
 }
 
-// 核心算法：带势的逐次最短增广路径（Successive Shortest Path with Potentials）
-// - 用 Bellman-Ford 从源点 s 计算初始势 pi[]。
-// - 在约化费用（cost + pi[u] - pi[v]）非负的图上重复运行 Dijkstra，找到 s->t 的最小费用路径，
-//   在该路径上尽可能增广，然后更新势。
-// 参数：
-//   s, t: 源点和汇点
-//   out_flow, out_cost: 返回的总流量与总费用（通过指针返回）
+// 主算法（每轮用 SPFA 找最小费用增广路径并增广）
+// 参数：s 源点，t 汇点，out_flow/out_cost 为输出指针
 void min_cost_max_flow(int s, int t, long long *out_flow, long long *out_cost) {
   // 使用队列（SPFA）在残量图中寻找每轮的最小费用路径并增广
   ll flow = 0, cost = 0;
@@ -133,15 +120,18 @@ void min_cost_max_flow(int s, int t, long long *out_flow, long long *out_cost) {
       inqueue[i] = 0;
     }
 
-    // 简单循环队列实现 SPFA
-    int *queue = malloc(sizeof(int) * (N + 5));
+    // 环形缓冲区实现 SPFA 队列，容量设为 N*5+5（足够避免频繁溢出）
+    int capq = N * 5 + 5;
+    int *queue = malloc(sizeof(int) * capq);
     int qhead = 0, qtail = 0;
     dist[s] = 0;
     queue[qtail++] = s;
+    if (qtail == capq) qtail = 0;
     inqueue[s] = 1;
 
-    while (qhead < qtail) {
+    while (qhead != qtail) {
       int v = queue[qhead++];
+      if (qhead == capq) qhead = 0;
       inqueue[v] = 0;
       for (int e = head[v]; e != -1; e = next_[e]) {
         if (cap_[e] <= 0) continue;
@@ -153,7 +143,7 @@ void min_cost_max_flow(int s, int t, long long *out_flow, long long *out_cost) {
           if (!inqueue[to]) {
             inqueue[to] = 1;
             queue[qtail++] = to;
-            if (qtail >= N + 5) qtail = qtail; // 防守性保留（数组已按 N+5 分配）
+            if (qtail == capq) qtail = 0;
           }
         }
       }
