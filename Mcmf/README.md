@@ -174,6 +174,44 @@ bash Mcmf/run_correctness_tests.sh
 2. 比对最大流值和最小费用
 3. 检查费用是否为全局最优
 
+## 性能测试
+
+### 运行时间与数据规模关系测试
+
+运行性能测试脚本（需要 Python 3）：
+
+```bash
+python3 Mcmf/test_performance.py
+```
+
+**测试内容**：
+1. **顶点数缩放测试** - 验证时间与 n 的关系（m=5n）
+2. **边数缩放测试** - 验证时间与 m 的关系（n=500）
+3. **容量分布影响** - 不同容量配置对性能的影响
+4. **稀疏图 vs 稠密图** - 不同图密度下的性能对比
+
+**输出**：
+- CSV 结果文件：`Mcmf/performance_test_results.csv`
+- 统计分析（平均时间、时间增长倍数等）
+
+### 可视化分析
+
+生成性能测试图表（需要安装 pandas 和 matplotlib）：
+
+```bash
+pip3 install pandas matplotlib numpy
+python3 Mcmf/visualize_performance.py
+```
+
+**生成图表**（保存在 `Mcmf/performance_plots/`）：
+- `vertex_scaling.png` - 顶点数缩放分析
+- `edge_scaling.png` - 边数缩放分析
+- `capacity_impact.png` - 容量分布影响
+- `sparse_vs_dense.png` - 稀疏/稠密对比
+- `combined_scaling.png` - 组合缩放 (n+m)
+
+详细使用说明见：[PERFORMANCE_TESTING.md](Mcmf/PERFORMANCE_TESTING.md)
+
 ## 算法复杂度分析
 
 ### 时间复杂度
@@ -265,21 +303,6 @@ n=10000, m=50000   ~800ms
 2. 每轮重新初始化 O(n) 数组
 3. 增广轮数依赖于容量分布
 
-### 复杂度验证
-
-可以通过修改代码添加统计信息验证复杂度：
-
-```c
-// 在 min_cost_max_flow 中添加
-int augment_count = 0;      // 增广轮数
-long long spfa_ops = 0;     // SPFA 松弛操作总数
-
-// 输出统计信息
-fprintf(stderr, "Augments: %d, Ops: %lld, Avg: %lld\n", 
-        augment_count, spfa_ops, spfa_ops/augment_count);
-```
-
----
 
 **编译选项说明**：
 - `-std=c11`：使用 C11 标准
