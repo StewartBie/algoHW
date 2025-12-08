@@ -210,7 +210,7 @@ python3 Mcmf/visualize_performance.py
 - `sparse_vs_dense.png` - 稀疏/稠密对比
 - `combined_scaling.png` - 组合缩放 (n+m)
 
-详细使用说明见：[PERFORMANCE_TESTING.md](Mcmf/PERFORMANCE_TESTING.md)
+详细使用说明见仓库：[PERFORMANCE_TESTING.md](https://github.com/StewartBie/algoHW/blob/mcmf/Mcmf/PERFORMANCE_TESTING.md)
 
 ### 实验结果分析
 
