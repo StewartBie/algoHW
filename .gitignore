@@ -6,3 +6,6 @@ Mcmf/*.csv
 Mcmf/mcmf
 kmp/__pycache__
 kmp/test_cases
+**/*.pdf
+**/*.html
+**/*.tex
