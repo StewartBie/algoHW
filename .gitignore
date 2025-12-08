@@ -1,3 +1,6 @@
 *.pdf
+.gitignore
 Mcmf/correctness_tests
 Mcmf/mcmf
+kmp/__pycache__
+kmp/test_cases
